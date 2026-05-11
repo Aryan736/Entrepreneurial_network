@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>EntreNet — Feed</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-900 font-sans antialiased min-h-screen">
+
+  <nav class="bg-white border-b border-gray-200 sticky top-0 z-50">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="flex justify-between h-16">
+              <div class="flex items-center gap-8">
+                  <span class="text-2xl font-extrabold text-blue-600 tracking-tight">EntreNet</span>
+                  <div class="hidden sm:flex gap-4">
+                      <a href="feed.html" class="bg-blue-50 text-blue-700 px-3 py-2 rounded-md text-sm font-medium">Feed</a>
+                      <a href="network.html" class="text-gray-500 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">Network</a>
+                  </div>
+              </div>
+              <div class="flex items-center gap-4">
+                  <div id="navAvatar" class="w-9 h-9 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-bold border border-blue-200 shadow-sm">
+                      ?
+                  </div>
+                  <button onclick="logout()" class="text-gray-500 hover:text-red-600 text-sm font-medium transition-colors border border-gray-200 hover:border-red-200 px-3 py-1.5 rounded-lg">
+                      Sign Out
+                  </button>
+              </div>
+          </div>
+      </div>
+  </nav>
+
+  <main class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <h3 class="text-lg font-bold text-gray-900 mb-4">Share with the network</h3>
+      
+      <div id="postMsg" class="hidden px-4 py-3 rounded-lg text-sm mb-4 border font-medium"></div>
+
+      <div class="space-y-4">
+        <input type="text" id="postTitle" placeholder="Title — e.g. Looking for a technical co-founder" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors text-sm font-medium">
+        
+        <textarea id="postContent" placeholder="What's on your mind? Share your ideas, ask for advice, or announce an update..." class="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors text-sm min-h-[100px] resize-y"></textarea>
+        
+        <div class="flex flex-col sm:flex-row gap-4">
+          <select id="postCategory" class="w-full sm:w-1/3 px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors text-sm cursor-pointer">
+            <option value="idea">💡 Idea</option>
+            <option value="funding">💰 Funding</option>
+            <option value="collaboration">🤝 Collaboration</option>
+            <option value="news">📰 News</option>
+            <option value="other">🔗 Other</option>
+          </select>
+          
+          <input type="text" id="postTags" placeholder="Tags (comma separated) e.g. fintech, startup" class="w-full sm:w-2/3 px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors text-sm">
+        </div>
+
+        <div class="flex justify-end pt-2">
+            <button onclick="createPost()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-lg text-sm transition-colors shadow-sm">
+                Post to Feed
+            </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="feed" class="space-y-6">
+      <div class="text-center text-gray-500 py-10 italic">Loading posts...</div>
+    </div>
+
+  </main>
+
+  <script>
+    const API = 'http://localhost:5000/api';
+    const token = localStorage.getItem('token');
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+    // Redirect if not logged in
+    if (!token) window.location.href = 'login.html';
+
+    // Set navbar avatar
+    if (user.name) {
+      document.getElementById('navAvatar').textContent =
+        user.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+    }
+
+    function logout() {
+      localStorage.clear();
+      window.location.href = 'login.html';
+    }
+
+    function timeAgo(date) {
+      const diff = Math.floor((Date.now() - new Date(date)) / 1000);
+      if (diff < 60) return 'Just now';
+      if (diff < 3600) return `${Math.floor(diff/60)}m ago`;
+      if (diff < 86400) return `${Math.floor(diff/3600)}h ago`;
+      return `${Math.floor(diff/86400)}d ago`;
+    }
+
+    // Assign Tailwind colors based on category
+    function getCatStyles(cat) {
+      const styles = { 
+          idea: 'bg-yellow-50 text-yellow-700 border-yellow-200', 
+          funding: 'bg-green-50 text-green-700 border-green-200', 
+          collaboration: 'bg-purple-50 text-purple-700 border-purple-200', 
+          news: 'bg-blue-50 text-blue-700 border-blue-200', 
+          other: 'bg-gray-100 text-gray-700 border-gray-200' 
+      };
+      return styles[cat] || styles.other;
+    }
+
+    function getInitials(name) {
+      return name ? name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : '?';
+    }
+
+    // LOAD POSTS
+    async function loadPosts() {
+      try {
+        const res = await fetch(`${API}/posts`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const posts = await res.json();
+        const feed = document.getElementById('feed');
+
+        if (!posts.length) {
+          feed.innerHTML = '<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-10 text-center text-gray-500 font-medium">No posts yet. Be the first to start a conversation!</div>';
+          return;
+        }
+
+        feed.innerHTML = posts.map(post => `
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow" id="post-${post._id}">
+            
+            <div class="flex justify-between items-start mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-sm font-bold border border-blue-100">
+                        ${getInitials(post.user?.name)}
+                    </div>
+                    <div>
+                        <div class="text-gray-900 font-bold text-sm">${post.user?.name || 'Unknown User'}</div>
+                        <div class="text-gray-500 text-xs font-medium uppercase tracking-wide">${post.user?.role || ''} • ${timeAgo(post.createdAt)}</div>
+                    </div>
+                </div>
+                <span class="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border ${getCatStyles(post.category)}">
+                    ${post.category}
+                </span>
+            </div>
+
+            <h4 class="text-lg font-bold text-gray-900 mb-2">${post.title}</h4>
+            <p class="text-gray-600 text-sm leading-relaxed mb-4 whitespace-pre-wrap">${post.content}</p>
+            
+            ${post.tags?.length ? `
+            <div class="flex flex-wrap gap-2 mb-4">
+                ${post.tags.map(t => `<span class="bg-gray-100 text-gray-600 text-xs font-medium px-2.5 py-1 rounded-md">#${t}</span>`).join('')}
+            </div>` : ''}
+
+            <div class="flex items-center gap-6 pt-4 border-t border-gray-100">
+              <button class="flex items-center gap-1.5 text-sm font-semibold transition-colors ${post.likes?.includes(user._id) ? 'text-red-500 hover:text-red-600' : 'text-gray-500 hover:text-blue-600'}"
+                onclick="likePost('${post._id}', this)">
+                <svg class="w-5 h-5 ${post.likes?.includes(user._id) ? 'fill-current' : 'fill-none stroke-current stroke-2'}" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                <span>${post.likes?.length || 0}</span>
+              </button>
+              
+              ${post.user?._id === user._id ? `
+                <button class="flex items-center gap-1.5 text-sm font-semibold text-gray-400 hover:text-red-500 transition-colors ml-auto" onclick="deletePost('${post._id}')">
+                  <svg class="w-4 h-4 stroke-current stroke-2 fill-none" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                  Delete
+                </button>` : ''}
+            </div>
+          </div>
+        `).join('');
+      } catch (err) {
+        document.getElementById('feed').innerHTML = '<div class="bg-red-50 text-red-600 border border-red-200 p-6 rounded-xl text-center text-sm font-medium">Error loading posts. Is your server running?</div>';
+      }
+    }
+
+    // CREATE POST
+    async function createPost() {
+      const title = document.getElementById('postTitle').value.trim();
+      const content = document.getElementById('postContent').value.trim();
+      const category = document.getElementById('postCategory').value;
+      const tagsRaw = document.getElementById('postTags').value;
+      const tags = tagsRaw ? tagsRaw.split(',').map(t => t.trim().replace(/^#/, '')) : []; // Clean up tags
+      const msg = document.getElementById('postMsg');
+
+      if (!title || !content) {
+        msg.className = 'block bg-red-50 text-red-700 border-red-200 mb-4 px-4 py-3 rounded-lg text-sm font-medium border';
+        msg.textContent = 'Please provide both a title and content for your post.';
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API}/posts`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ title, content, category, tags })
+        });
+
+        if (res.ok) {
+          msg.className = 'block bg-green-50 text-green-700 border-green-200 mb-4 px-4 py-3 rounded-lg text-sm font-medium border';
+          msg.textContent = 'Post published successfully!';
+          document.getElementById('postTitle').value = '';
+          document.getElementById('postContent').value = '';
+          document.getElementById('postTags').value = '';
+          setTimeout(() => { msg.classList.add('hidden'); loadPosts(); }, 1500);
+        } else {
+          const data = await res.json();
+          msg.className = 'block bg-red-50 text-red-700 border-red-200 mb-4 px-4 py-3 rounded-lg text-sm font-medium border';
+          msg.textContent = data.message || 'Failed to publish post.';
+        }
+      } catch (err) {
+        msg.className = 'block bg-red-50 text-red-700 border-red-200 mb-4 px-4 py-3 rounded-lg text-sm font-medium border';
+        msg.textContent = 'Server error. Please try again.';
+      }
+    }
+
+    // LIKE POST
+    async function likePost(postId, btn) {
+      try {
+        const res = await fetch(`${API}/posts/${postId}/like`, {
+          method: 'PUT',
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+        
+        if (res.ok) {
+          const svg = btn.querySelector('svg');
+          const span = btn.querySelector('span');
+          
+          if (btn.classList.contains('text-red-500')) {
+              // Unliking
+              btn.classList.remove('text-red-500', 'hover:text-red-600');
+              btn.classList.add('text-gray-500', 'hover:text-blue-600');
+              svg.classList.remove('fill-current');
+              svg.classList.add('fill-none', 'stroke-current', 'stroke-2');
+          } else {
+              // Liking
+              btn.classList.remove('text-gray-500', 'hover:text-blue-600');
+              btn.classList.add('text-red-500', 'hover:text-red-600');
+              svg.classList.remove('fill-none', 'stroke-current', 'stroke-2');
+              svg.classList.add('fill-current');
+          }
+          span.textContent = data.likes;
+        }
+      } catch (err) { console.error(err); }
+    }
+
+    // DELETE POST
+    async function deletePost(postId) {
+      if (!confirm('Are you sure you want to delete this post? This action cannot be undone.')) return;
+      try {
+        const res = await fetch(`${API}/posts/${postId}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) loadPosts();
+      } catch (err) { console.error(err); }
+    }
+
+    // INIT
+    loadPosts();
+  </script>
+</body>
+</html>

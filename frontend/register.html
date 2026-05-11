@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EntreNet — Join the Network</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-white text-gray-800 font-sans antialiased min-h-screen flex">
+
+    <div class="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 to-indigo-900 p-12 text-white flex-col justify-between">
+        <div>
+            <h1 class="text-4xl font-extrabold tracking-tight">EntreNet</h1>
+        </div>
+        <div>
+            <h2 class="text-4xl font-bold mb-4 leading-tight">Build your influence.</h2>
+            <p class="text-lg text-blue-100 max-w-md leading-relaxed">
+                Join a community of founders and investors. Expand your network, build confidence, and win the right friends in the entrepreneurial space to take your ideas to the next level.
+            </p>
+        </div>
+        <div class="text-sm text-blue-300">
+            &copy; 2026 EntreNet Platform
+        </div>
+    </div>
+
+    <div class="w-full lg:w-1/2 flex items-center justify-center p-8 sm:p-12 bg-gray-50">
+        <div class="w-full max-w-md">
+            <div class="lg:hidden mb-8 text-center">
+                <h1 class="text-3xl font-extrabold text-blue-600">EntreNet</h1>
+            </div>
+
+            <h2 class="text-2xl font-bold text-gray-900 mb-2">Create an account</h2>
+            <p class="text-gray-500 mb-8">Start your journey with us today.</p>
+
+            <div id="errorMessage" class="hidden bg-red-50 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded shadow-sm text-sm" role="alert"></div>
+
+            <form id="registerForm" class="space-y-5">
+                <div>
+                    <label for="name" class="block text-sm font-medium text-gray-700">Full Name</label>
+                    <input type="text" id="name" required placeholder="e.g. Aryan Singh" class="mt-1 block w-full px-4 py-3 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-150 ease-in-out">
+                </div>
+
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700">Email Address</label>
+                    <input type="email" id="email" required placeholder="you@example.com" class="mt-1 block w-full px-4 py-3 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-150 ease-in-out">
+                </div>
+
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                    <input type="password" id="password" required placeholder="••••••••" class="mt-1 block w-full px-4 py-3 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-150 ease-in-out">
+                </div>
+
+                <div>
+                    <label for="role" class="block text-sm font-medium text-gray-700">I am a...</label>
+                    <div class="relative mt-1">
+                        <select id="role" class="block w-full px-4 py-3 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none transition duration-150 ease-in-out">
+                            <option value="entrepreneur">Entrepreneur</option>
+                            <option value="investor">Investor</option>
+                            <option value="mentor">Mentor</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
+                            <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out mt-4">
+                    Create Account
+                </button>
+            </form>
+
+            <p class="mt-8 text-center text-sm text-gray-600">
+                Already have an account? <a href="login.html" class="font-semibold text-blue-600 hover:text-blue-500 transition duration-150 ease-in-out">Sign in instead</a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        const registerForm = document.getElementById('registerForm');
+        const errorMessage = document.getElementById('errorMessage');
+
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const name = document.getElementById('name').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const role = document.getElementById('role').value;
+
+            errorMessage.classList.add('hidden');
+
+            try {
+                const response = await fetch('http://localhost:5000/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, password, role })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert('Registration successful! Redirecting to login...');
+                    window.location.href = 'login.html';
+                } else {
+                    errorMessage.textContent = data.message || 'Registration failed.';
+                    errorMessage.classList.remove('hidden');
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                errorMessage.textContent = 'Unable to connect to the server.';
+                errorMessage.classList.remove('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
