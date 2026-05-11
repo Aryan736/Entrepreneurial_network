@@ -5,8 +5,8 @@ EntreNet is a full-stack professional networking platform designed specifically 
 ## 🛠️ Tech Stack
 
 **Frontend:**
-* HTML5
-* Vanilla JavaScript (ES6+)
+* HTML
+* JavaScript 
 * Tailwind CSS (via CDN)
 * Fetch API for asynchronous requests
 
