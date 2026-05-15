@@ -1,4 +1,4 @@
-const Post = require('../models/Post');
+const Post = require('../models/post');
 
 // @desc    Create a post
 // @route   POST /api/posts

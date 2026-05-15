@@ -1,5 +1,5 @@
-const Connection = require('../models/Connection');
-const User = require('../models/User');
+const Connection = require('../models/connection');
+const User = require('../models/user');
 
 // @desc    Send connection request
 // @route   POST /api/connections/send/:id

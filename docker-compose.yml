@@ -1,0 +1,29 @@
+version: '3.9'
+
+services:
+  app:
+    build: .
+    container_name: entrenet-app
+    ports:
+      - "5000:5000"
+
+    depends_on:
+      - mongo
+
+    environment:
+      PORT: 5000
+      MONGO_URI: mongodb://mongo:27017/entrenet
+      JWT_SECRET: mysecretkey
+
+  mongo:
+    image: mongo
+    container_name: entrenet-mongo
+
+    ports:
+      - "27018:27017"
+
+    volumes:
+      - mongo_data:/data/db
+
+volumes:
+  mongo_data:
