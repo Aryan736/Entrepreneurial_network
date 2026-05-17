@@ -1,8 +1,8 @@
-# EntreNet 🚀
+# EntreNet 
 
 EntreNet is a full-stack professional networking platform designed specifically for entrepreneurs, investors, and mentors. It provides a dedicated space to share ideas, seek funding, find collaborators, and build a meaningful professional network.
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 **Frontend:**
 * HTML
@@ -17,7 +17,7 @@ EntreNet is a full-stack professional networking platform designed specifically 
 * JSON Web Tokens (JWT) for secure authentication
 * bcryptjs for password hashing
 
-## ✨ Key Features
+## Key Features
 
 * **Secure Authentication:** Complete user registration and login flow using JWT stored in local storage.
 * **Role-Based Profiles:** Users can identify as an Entrepreneur, Investor, or Mentor.
@@ -26,7 +26,7 @@ EntreNet is a full-stack professional networking platform designed specifically 
 * **Interactive Engagement:** Users can like and delete their own posts with real-time UI updates.
 * **Connection System:** A fully functional networking system allowing users to discover others, send connection requests, and accept/reject pending invites.
 
-## 📂 Project Structure
+## Project Structure
 
 ```text
 entrepreneurial-network/
